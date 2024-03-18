@@ -23,6 +23,11 @@ cp ~/groupdirs/SCIENCE-BIO-Popgen_Course/projects/arctic_fox/* .
 ls -l
 ```
 
+```
+# Fix chromosome identifier in .bim-file
+python bim_fix.py 
+```
+
 ### Characterizing the data
 ```R
 # Loading PLINK genotype data
@@ -51,20 +56,61 @@ dim(geo)
 ---
 
 ## Population substructure
-
-- Filter some 0.15 maf
-     - Does it make a difference?
-- Nice plot
-    - Sort legend by location
-    - Color by country
-- Map
-    - Matching a color
-
+TODO
 - Try to subdivide populations by PCAs
     - Kmeans clustering? 3,4,5 k
     - Fst matrix
+- Relatedness plot?
 
-### PCA
+### PCA with PLINK
+In UNIX:
+```unix
+plink --bfile AF.imputed.thin --pca 50 --maf 0.15 --geno 0 --out pca/pca_results
+```
+
+In R:
+```R
+# Loading PCA results
+eigenvals <- read.table("pca/pca_results.eigenval")
+pcs <- read.table("pca/pca_results.eigenvec")[3:52]
+names(pcs) <- paste("PC",1:50, sep="")
+
+# Loading sample data
+geo <- read.table("sample_popinfo.tsv",header=1)
+
+# Sorting data according to regions
+region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", "Taymyr", "Bylot_island", "Karrak_lake")
+geo$Region <- factor(geo$Region, levels=region_order)
+geo <- geo[order(geo$Region), ]
+pcs <- pcs[as.integer(rownames(geo)),]
+
+# Extracting importance of PCs
+pca_importance <- eigenvals / sum(eigenvals)
+PC1_explained <- round(pca_importance[1,1]*100, 1)
+PC2_explained <- round(pca_importance[1,2]*100, 1)
+PC3_explained <- round(pca_importance[1,3]*100, 1)
+
+# Plot
+palette(c("#7E0605", "#C00E38", "#FF0000", "#FF7D7B", "#B82EAA", "#13501B", "#17A238"))
+par(mfrow=c(2,2))
+plot(pca_importance[,1], type='b', xlab='PC', ylab='Proportion of variance', las=1,
+	pch=19, col='darkred', bty='L', main='Proportion of variance explained per PC')
+plot(pcs$PC1, pcs$PC2, col=geo$Region, pch=19, las=1, bty='L',
+     main='PCA on 47 arctic foxes',
+     xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
+     ylab=paste0('PC2 (', PC2_explained, '% of variance)'))
+legend('topright', legend=c("Zackenberg (n=5)", "Scoresbysund (n=12)", "Kangerlussuaq (n=10)", "Qanisartuut (n=11)", "Taymyr (n=5)", "Bylot Island (n=1)", "Karrak Lake (n=3)"), col=1:length(levels(geo$Region)), pch=19)
+plot(pcs$PC1, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
+     main='PCA on 47 arctic foxes',
+     xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
+     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
+plot(pcs$PC2, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
+     main='PCA on 47 arctic foxes',
+     xlab=paste0('PC2 (', PC2_explained, '% of variance)'),
+     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
+```
+
+### PCA with R
 ```R
 # Number of missing samples per site
 nMis <- colSums(is.na(geno))
@@ -98,7 +144,7 @@ plot(pcs$PC1, pcs$PC2, col=geo$Region, pch=19, las=1, bty='L',
      main='PCA on 47 arctic foxes',
      xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
      ylab=paste0('PC2 (', PC2_explained, '% of variance)'))
-legend('topright', legend=levels(geo$Region), col=1:length(levels(geo$Region)), pch=19)
+legend('topright', legend=c("Zackenberg (n=5)", "Scoresbysund (n=12)", "Kangerlussuaq (n=10)", "Qanisartuut (n=11)", "Taymyr (n=5)", "Bylot Island (n=1)", "Karrak Lake (n=3)"), col=1:length(levels(geo$Region)), pch=19)
 plot(pcs$PC1, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
      main='PCA on 47 arctic foxes',
      xlab=paste0('PC1 (', PC1_explained, '% of variance)'),

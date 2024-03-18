@@ -3,7 +3,7 @@
 ##### Quick commands
 ```unix
 # Navigate to group working directory
-cd ~/groupdirs/SCIENCE-BIO-popgen_course-project/Group2
+cd ~/groupdirs/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox
 ```
 
 ---
@@ -16,7 +16,7 @@ We are provided with...
 ##### Quick commands
 ```unix
 # (Re)download project data
-cd ~/groupdirs/SCIENCE-BIO-popgen_course-project/Group2
+cd ~/groupdirs/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox
 cp ~/groupdirs/SCIENCE-BIO-Popgen_Course/projects/arctic_fox/* .
 
 # View files
@@ -33,8 +33,13 @@ geno[geno==0] <- NA
 geno <- geno-1
 
 # Loading sample data
-fam <- read.table("AF.imputed.thin.fam")
 geo <- read.table("sample_popinfo.tsv",header=1)
+
+# Sorting data according to regions
+region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", "Taymyr", "Bylot_island", "Karrak_lake")
+geo$Region <- factor(geo$Region, levels=region_order)
+geo <- geo[order(geo$Region), ]
+geno <- geno[as.integer(rownames(geo)),]
 ```
 
 ```R
@@ -42,9 +47,6 @@ geo <- read.table("sample_popinfo.tsv",header=1)
 dim(geno)
 dim(fam)
 dim(geo)
-
-# Checking whether sample order matches
-all(geo$Sample == fam$V2)
 ```
 ---
 
@@ -78,23 +80,31 @@ summary(pca)
 
 # Extract importance of PCs.
 pca_importance <- summary(pca)$importance
-plot(pca_importance[2,], type='b', xlab='PC', ylab='Proportion of variance', las=1,
-	pch=19, col='darkred', bty='L', main='Proportion of variance explained per PC')
-```
 
-```R
-# Extract percentage of the variance that is explained by PC1 and PC2
+# Extract percentage of the variance that is explained by PC1-3
 PC1_explained <- round(pca_importance[2,1]*100, 1)
 PC2_explained <- round(pca_importance[2,2]*100, 1)
+PC3_explained <- round(pca_importance[2,3]*100, 1)
 
 # Extract the PCs
 pcs <- as.data.frame(pca$x)
 
 # Plot
-palette(c("#8B0505", "#C00000", "#F90000", "#FF7472", "#78206E", "#13501B", "#17A238"))
+palette(c("#7E0605", "#C00E38", "#FF0000", "#FF7D7B", "#B82EAA", "#13501B", "#17A238"))
+par(mfrow=c(2,2))
+plot(pca_importance[2,], type='b', xlab='PC', ylab='Proportion of variance', las=1,
+	pch=19, col='darkred', bty='L', main='Proportion of variance explained per PC')
 plot(pcs$PC1, pcs$PC2, col=geo$Region, pch=19, las=1, bty='L',
      main='PCA on 47 arctic foxes',
      xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
      ylab=paste0('PC2 (', PC2_explained, '% of variance)'))
 legend('topright', legend=levels(geo$Region), col=1:length(levels(geo$Region)), pch=19)
+plot(pcs$PC1, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
+     main='PCA on 47 arctic foxes',
+     xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
+     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
+plot(pcs$PC2, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
+     main='PCA on 47 arctic foxes',
+     xlab=paste0('PC2 (', PC2_explained, '% of variance)'),
+     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
 ```

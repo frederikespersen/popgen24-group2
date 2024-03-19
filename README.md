@@ -72,42 +72,68 @@ In R:
 ```R
 # Loading PCA results
 eigenvals <- read.table("pca/pca_results.eigenval")
-pcs <- read.table("pca/pca_results.eigenvec")[3:52]
-names(pcs) <- paste("PC",1:50, sep="")
+pcs <- read.table("pca/pca_results.eigenvec")[3:23]
+names(pcs) <- paste("PC",1:20, sep="")
 
 # Loading sample data
 geo <- read.table("sample_popinfo.tsv",header=1)
 
+# Formatting text
+geo$Region <- gsub("_", " ", geo$Region)
+
 # Sorting data according to regions
-region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", "Taymyr", "Bylot_island", "Karrak_lake")
+region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", "Taymyr", "Bylot island", "Karrak lake")
 geo$Region <- factor(geo$Region, levels=region_order)
 geo <- geo[order(geo$Region), ]
 pcs <- pcs[as.integer(rownames(geo)),]
-
+```
+```R
 # Extracting importance of PCs
 pca_importance <- eigenvals / sum(eigenvals)
 PC1_explained <- round(pca_importance[1,1]*100, 1)
-PC2_explained <- round(pca_importance[1,2]*100, 1)
-PC3_explained <- round(pca_importance[1,3]*100, 1)
-
+PC2_explained <- round(pca_importance[2,1]*100, 1)
+PC3_explained <- round(pca_importance[3,1]*100, 1)
+```
+```R
 # Plot
-palette(c("#7E0605", "#C00E38", "#FF0000", "#FF7D7B", "#B82EAA", "#13501B", "#17A238"))
-par(mfrow=c(2,2))
-plot(pca_importance[,1], type='b', xlab='PC', ylab='Proportion of variance', las=1,
-	pch=19, col='darkred', bty='L', main='Proportion of variance explained per PC')
-plot(pcs$PC1, pcs$PC2, col=geo$Region, pch=19, las=1, bty='L',
-     main='PCA on 47 arctic foxes',
-     xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
-     ylab=paste0('PC2 (', PC2_explained, '% of variance)'))
-legend('topright', legend=c("Zackenberg (n=5)", "Scoresbysund (n=12)", "Kangerlussuaq (n=10)", "Qanisartuut (n=11)", "Taymyr (n=5)", "Bylot Island (n=1)", "Karrak Lake (n=3)"), col=1:length(levels(geo$Region)), pch=19)
-plot(pcs$PC1, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
-     main='PCA on 47 arctic foxes',
-     xlab=paste0('PC1 (', PC1_explained, '% of variance)'),
-     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
-plot(pcs$PC2, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
-     main='PCA on 47 arctic foxes',
-     xlab=paste0('PC2 (', PC2_explained, '% of variance)'),
-     ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
+library(ggplot2)
+library(ggpubr)
+
+region_palette <- c("#7E0605", "#C00E38", "#FF0000", "#FF7D7B", "#B82EAA", "#13501B", "#17A238")
+
+p12 <- 
+  ggplot(pcs, aes(x=PC1, y=PC2, color=geo$Region)) +
+  geom_point() +
+  labs(x = paste0('PC1 (', PC1_explained, '% of variance)'),
+       y = paste0('PC2 (', PC2_explained, '% of variance)'),
+       color = "Sample region") +
+  theme_classic() +
+  theme(text = element_text(family = "serif")) +
+  scale_color_manual(values = region_palette)
+
+p13 <- 
+  ggplot(pcs, aes(x=PC1, y=PC3, color=geo$Region)) +
+  geom_point() +
+  labs(x = paste0('PC1 (', PC1_explained, '% of variance)'),
+       y = paste0('PC3 (', PC3_explained, '% of variance)')) +
+  theme_classic() +
+  theme(text = element_text(family = "serif")) +
+  scale_color_manual(values = region_palette)
+
+p23 <- 
+  ggplot(pcs, aes(x=PC2, y=PC3, color=geo$Region)) +
+  geom_point() +
+  labs(x = paste0('PC2 (', PC2_explained, '% of variance)'),
+       y = paste0('PC3 (', PC3_explained, '% of variance)')) +
+  theme_classic() +
+  theme(text = element_text(family = "serif")) +
+  scale_color_manual(values = region_palette)
+
+combined_plot <-
+  ggarrange(p12, p13, p23, ncol = 3,
+            common.legend = TRUE, legend = "right")
+
+ggsave("pca_plink.png", combined_plot, width = 10, height = 3, dpi = 300)
 ```
 
 ### PCA with R
@@ -153,4 +179,3 @@ plot(pcs$PC2, pcs$PC3, col=geo$Region, pch=19, las=1, bty='L',
      main='PCA on 47 arctic foxes',
      xlab=paste0('PC2 (', PC2_explained, '% of variance)'),
      ylab=paste0('PC3 (', PC3_explained, '% of variance)'))
-```

@@ -37,7 +37,39 @@ do
 done
 ```
 
+Evaluating the fit of admixture analyses: value of K (done for each `K${K}.output.corres.txt`)
+```R
+# Read in plotting functions
+source("visFuns.R")
 
+# Read in the population info
+popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
+pop = as.vector(popinfo[,1])
+
+# Read in the output 
+r <- as.matrix(read.table("K3.output.corres.txt"))
+plotCorRes(cor_mat = r, pop = pop, title = "Correlation of residuals (K=3)", max_z=0.15, min_z=-0.15)
+```
+
+```bash
+# For best K=7, run 10 admixture
+# Assumed number of ancestral populations 
+K=7
+
+for i in {1..10}
+do
+   # Run admixture with seed i
+   admixture -s ${i} AF.imputed.thin.bed ${K} > admix_K7/AF.imputed.thin.K${K}_run${i}.log
+   
+   # Rename the output files
+   cp AF.imputed.thin.${K}.Q admix_K7/AF.imputed.K${K}_run${i}.Q
+   cp AF.imputed.thin.${K}.P admix_K7/AF.imputed.K${K}_run${i}.P
+done
+
+# Show the likelihood of all the 10 runs (in a sorted manner):
+cd admix_K7
+grep ^Loglikelihood: *K${K}*log | sort -k2
+```
 
 
 Test plot of K=7, run 1

@@ -37,6 +37,9 @@ do
 done
 ```
 
+
+
+
 Test plot of K=7, run 1
 ```R
 # Margins and colors

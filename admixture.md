@@ -37,3 +37,28 @@ do
 done
 ```
 
+
+
+# Load sample names
+popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
+region_names <- popinfo$Region
+
+# Read sample ancestral proportions
+snp_k7_run1 <- as.matrix(read.table("AF.imputed.K7_run1.Q"))
+
+# Ensure row names of snp_k7_run1 correspond exactly to region_names
+rownames(snp_k7_run1) <- popinfo$Sample
+
+# Get the order of region_names
+order_indices <- order(match(region_names, unique(region_names)))
+
+# Reorder the rows of snp_k7_run1
+snp_k7_run1_sorted <- snp_k7_run1[order_indices, ]
+
+# Barplot with sorted data
+barplot(t(snp_k7_run1_sorted), col=c(7,6,5,4,3,2,1), 
+        names.arg=region_names[order_indices], cex.names=0.8,
+        border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
+
+
+

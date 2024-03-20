@@ -37,7 +37,11 @@ do
 done
 ```
 
-
+Test plot of K=7, run 1
+```R
+# Margins and colors
+par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
+palette(c("#E69F00", "#56B4E9", "#D55E00", "#999999", "#66CC00", "#CC0066", "#9999FF"))
 
 # Load sample names
 popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
@@ -59,6 +63,4 @@ snp_k7_run1_sorted <- snp_k7_run1[order_indices, ]
 barplot(t(snp_k7_run1_sorted), col=c(7,6,5,4,3,2,1), 
         names.arg=region_names[order_indices], cex.names=0.8,
         border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
-
-
-
+```

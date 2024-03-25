@@ -98,8 +98,9 @@ order_indices <- order(match(region_names, unique(region_names)))
 # Reorder the rows of snp_k7_run1
 snp_k7_run1_sorted <- snp_k7_run1[order_indices, ]
 
-# Barplot with sorted data
-barplot(t(snp_k7_run1_sorted), col=c(7,6,5,4,3,2,1), 
+# Barplot with sorted data using the Set3 colors
+barplot(t(snp_k7_run1_sorted), col=colors, 
         names.arg=region_names[order_indices], cex.names=0.8,
         border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
+
 ```

@@ -79,7 +79,7 @@ library(RColorBrewer)
 par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
 
 # Use Set3 color palette from RColorBrewer with 7 colors
-colors <- brewer.pal(7, "Accent")
+colors <- brewer.pal(7, "Set1")
 palette(colors)
 
 # Load sample names

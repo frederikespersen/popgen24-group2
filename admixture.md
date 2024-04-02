@@ -72,7 +72,7 @@ grep ^Loglikelihood: *K${K}*log | sort -k2
 ```
 
 
-Test plot of K=7, run 1
+Following code was used to make admixture plot of K equal to 3, 4, 5, 6, and 7 taking the best run out 10.
 ```R
 # Margins and colors
 par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
@@ -83,7 +83,7 @@ popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
 region_names <- popinfo$Region
 
 # Read sample ancestral proportions
-snp_k <- as.matrix(read.table("AF.imputed.K3_run1.Q"))
+snp_k <- as.matrix(read.table("AF.imputed.K4_run10.Q"))
 
 # Ensure row names of snp_k correspond exactly to region_names
 rownames(snp_k) <- popinfo$Sample

@@ -56,31 +56,28 @@ dim(geo)
 ---
 
 ## Population substructure
-TODO
-- Try to subdivide populations by PCAs
-    - Kmeans clustering? 3,4,5 k
-    - Fst matrix
-- Relatedness plot?
 
 ### PCA with PLINK
 In UNIX:
 ```unix
-plink --bfile AF.imputed.thin --pca 50 --maf 0.15 --geno 0 --out pca/pca_results
+mkdir pca
+plink --bfile AF.imputed.thin --pca 47 --maf 0.05 --geno 0 --out pca/pca_results
 ```
 
 In R:
 ```R
 # Loading PCA results
 eigenvals <- read.table("pca/pca_results.eigenval")
-pcs <- read.table("pca/pca_results.eigenvec")[3:23]
-names(pcs) <- paste("PC",1:20, sep="")
-names(eigenvals) <- paste("PC",1:47, sep="")
+pcs <- read.table("pca/pca_results.eigenvec")[3:49]
+names(pcs) <- paste("PC",1:47, sep="")
 
+# Extracting importance / explained variance of PCs
+pca_importance <- eigenvals / sum(eigenvals)
+names(pca_importance) <- c("Importance")
+pca_importance$PC <- 1:47
 
-# Loading sample data
+# Loading sample data and formatting text
 geo <- read.table("sample_popinfo.tsv",header=1)
-
-# Formatting text
 geo$Region <- gsub("_", " ", geo$Region)
 
 # Sorting data according to regions
@@ -88,11 +85,6 @@ region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", 
 geo$Region <- factor(geo$Region, levels=region_order)
 geo <- geo[order(geo$Region), ]
 pcs <- pcs[as.integer(rownames(geo)),]
-
-# Extracting importance of PCs
-pca_importance <- eigenvals / sum(eigenvals)
-names(pca_importance) <- c("Importance")
-pca_importance$PC <- 1:47
 ```
 
 ```R
@@ -160,21 +152,54 @@ ggsave("pca_plink.png", combined_plot, width = 10, height = 3, dpi = 300)
 
 ### Clustering with PCA from PLINK
 ```R
-# Loading PLINK genotype data
-library(snpMatrix)
-data <- read.plink("AF.imputed.thin")
-geno <- matrix(as.integer(data@.Data),nrow=nrow(data@.Data))
-geno[geno==0] <- NA
-geno <- geno-1
-
-# Removing SNPs missing data
-geno <- geno[,colSums(is.na(geno))==0]
-
 # Loading PCA fit
-pcs <- read.table("pca/pca_results.eigenvec")[3:23]
-names(pcs) <- paste("PC",1:20, sep="")
+pcs <- read.table("pca/pca_results.eigenvec")[3:49]
+names(pcs) <- paste("PC",1:47, sep="")
+
+# Loading sample data and formatting text
+geo <- read.table("sample_popinfo.tsv",header=1)
+geo$Region <- gsub("_", " ", geo$Region)
+row.names(pcs) <- paste(geo$Region, "(",1:47,")")
+
+# Sorting data according to regions
+region_order <- c("Qanisartuut", "Kangerlussuaq", "Scoresbysund", "Zackenberg", "Bylot island", "Karrak lake", "Taymyr")
+geo$Region <- factor(geo$Region, levels=region_order)
+geo <- geo[order(geo$Region), ]
+pcs <- pcs[as.integer(rownames(geo)),]
+row.names(pcs) <- paste(geo$Region, "(",1:47,")")
+row.names(pcs) <- paste(1:47, geo$Region)
 ```
 
+```R
+# Scanning over m and k
+num_samples <- length(pcs)
+clustering_frequency <- matrix(0, nrow = num_samples, ncol = num_samples)
+for (m in 1:6) {
+  for (k in 2:8) {
+    clusters <- kmeans(pcs[1:m], k)$cluster
+    clustering_frequency <- clustering_frequency + outer(
+      clusters,
+      clusters,
+      "==")
+  }
+}
+clustering_frequency <- clustering_frequency / max(clustering_frequency)
+
+# Plotting clustering frequency
+region_palette <- c("#FF7D7B", "#FF0000", "#C00E38", "#7E0605", "#13501B", "#17A238", "#B82EAA")
+order <- c(37, 36, 35, 38, 34, 44, 45, 43, 47, 46, 40, 41, 42, 39, 28, 25, 27, 32, 30, 26, 29, 24, 22, 33, 23, 31, 19, 18, 12, 20, 16, 21, 13, 17, 14, 15, 5, 11, 6, 10, 2, 9, 7, 8, 4, 1, 3)
+ordered_clustering_frequency <- clustering_frequency[order,order]
+region_colours <- region_palette[as.numeric(as.factor(geo$Region[order]))]
+par(cex = 1, family = "serif")
+labels <- paste(geo$Region[order], c(1:5, 1:5, 1:3, 1, 1:12, 1:10, 1:11))
+heatmap(ordered_clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours, labRow=labels, labCol=labels)
+# heatmap(clustering_frequency, symm=TRUE, RowSideColors=region_palette[as.numeric(as.factor(geo$Region))], ColSideColors=region_palette[as.numeric(as.factor(geo$Region))], keep.dendro=FALSE)
+dev.copy(png, "cluster_frequency.png")
+
+```
+
+
+### Fst
 ```R
 WC84<-function(x,pop){
      # function to estimate Fst using Weir and Cockerham estimator.
@@ -221,11 +246,14 @@ WC84<-function(x,pop){
 ```
 
 ```R
-# Assigning samples to clusters
-k = 7
-pcs_max = 5
-clusters <- kmeans(pcs[1:pcs_max], k)$cluster
+# Loading clustering definitions
+read.csv("clusters.csv", header=1)
 
+# LOADING
+library(dplyr)
+```
+
+```R
 # Comparing clusters by Fst
 cluster_pairs <- t(combn(unique(clusters), 2))
 fsts <- apply(cluster_pairs, 1, function(pair) WC84(geno[clusters %in% pair,], clusters[clusters %in% pair]))

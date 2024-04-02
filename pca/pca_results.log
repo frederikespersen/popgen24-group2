@@ -1,0 +1,33 @@
+PLINK v1.90p 64-bit (9 Jan 2018)
+Options in effect:
+  --bfile AF.imputed.thin
+  --geno 0
+  --maf 0.05
+  --out pca/pca_results
+  --pca 47
+
+Hostname: a00730.science.domain
+Working directory: /science/groupdirs/tgw325/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox
+Start time: Mon Apr  1 09:46:07 2024
+
+Random number seed: 1711957567
+48120 MB RAM detected; reserving 24060 MB for main workspace.
+816284 variants loaded from .bim file.
+47 people (0 males, 0 females, 47 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to pca/pca_results.nosex .
+Using up to 9 threads (change this with --threads).
+Before main variant filters, 47 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Warning: Nonmissing nonmale Y chromosome genotype(s) present; many commands
+treat these as missing.
+Total genotyping rate is 0.997944.
+96893 variants removed due to missing genotype data (--geno).
+220614 variants removed due to minor allele threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+498777 variants and 47 people pass filters and QC.
+Note: No phenotypes present.
+Excluding 15414 variants on non-autosomes from relationship matrix calc.
+Relationship matrix calculation complete.
+--pca: Results saved to pca/pca_results.eigenval and pca/pca_results.eigenvec .
+
+End time: Mon Apr  1 09:46:09 2024

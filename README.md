@@ -260,3 +260,37 @@ fsts <- apply(cluster_pairs, 1, function(pair) WC84(geno[clusters %in% pair,], c
 names(fsts) <- apply(cluster_pairs, 1, paste, collapse="_")
 lapply(fsts, function(x) x$theta_w)
 ```
+
+## Effect of human colonization
+
+### Inbreeding with PLINK
+
+In UNIX:
+```unix
+mkdir inbreed
+cd inbreed
+# Remove missing genotypes
+plink --bfile ../AF.imputed.thin --geno 0 --allow-extra-chr --make-bed --out ArcFox0
+# Compute heterozygosity per individual
+plink --bfile ArcFox0 --allow-extra-chr --het small-sample --out ArcFox0
+```
+In R:
+```R
+library(ggplot2)
+
+# Load het table
+F<-read.table("ArcFox0.het", h=T)
+# Store samples information
+samples<-read.table('../sample_popinfo.tsv', h=T)
+# Sort samples according to the regions
+F<-cbind(F, samples)
+F<-F[order(F$Region),]
+F<-F[order(F$Country),]
+
+inb_p<-ggplot(F, aes(x=IID, y=F, fill=Region)) +
+  geom_bar(stat="identity")+
+  theme_classic()+
+  theme(plot.title = element_text(size=14,hjust = 0.5), axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  scale_x_discrete(limits=F$IID)+xlab('Samples')+ylab('F (Inbreeding coefficient)')+
+  ggtitle('Inbreeding coefficient', )+scale_fill_brewer(palette="Dark2")
+```

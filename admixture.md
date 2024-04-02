@@ -97,6 +97,6 @@ snp_k_sorted <- snp_k[order_indices, ]
 # Barplot with sorted data using the given colors
 barplot(t(snp_k_sorted), col=c(7,6,5,4,3,2,1), 
         names.arg=region_names[order_indices], cex.names=0.8,
-        border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
+        border=NA, main="K=3 - Run 1", las=2, ylab="Ancestry proportion")
 
 ```

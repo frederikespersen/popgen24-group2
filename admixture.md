@@ -83,7 +83,7 @@ popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
 region_names <- popinfo$Region
 
 # Read sample ancestral proportions
-snp_k <- as.matrix(read.table("AF.imputed.K5_run7.Q"))
+snp_k <- as.matrix(read.table("AF.imputed.K7_run4.Q"))
 
 # Ensure row names of snp_k correspond exactly to region_names
 rownames(snp_k) <- popinfo$Sample
@@ -97,6 +97,6 @@ snp_k_sorted <- snp_k[order_indices, ]
 # Barplot with sorted data using the given colors
 barplot(t(snp_k_sorted), col=c(7,6,5,4,3,2,1), 
         names.arg=region_names[order_indices], cex.names=0.8,
-        border=NA, main="K=5 - Run 7", las=2, ylab="Ancestry proportion")
+        border=NA, main="K=7 - Run 4", las=2, ylab="Ancestry proportion")
 
 ```

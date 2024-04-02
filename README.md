@@ -195,68 +195,90 @@ labels <- paste(geo$Region[order], c(1:5, 1:5, 1:3, 1, 1:12, 1:10, 1:11))
 heatmap(ordered_clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours, labRow=labels, labCol=labels)
 # heatmap(clustering_frequency, symm=TRUE, RowSideColors=region_palette[as.numeric(as.factor(geo$Region))], ColSideColors=region_palette[as.numeric(as.factor(geo$Region))], keep.dendro=FALSE)
 dev.copy(png, "cluster_frequency.png")
-
 ```
 
+```R
+clustering_order <- c(35, 22, 13, 39, 3, 42, 43, 41, 45, 44, 1, 5, 46, 47, 23, 14, 20, 36, 29, 17, 26, 11, 4, 40, 8, 32, 30, 27, 6, 33, 21, 37, 9, 24, 15, 18, 16, 38, 19, 34, 7, 31, 25, 28, 12, 2, 10)
+```
 
 ### Fst
 ```R
+# Loading PLINK genotype data
+library(snpMatrix)
+data <- read.plink("AF.imputed.thin")
+geno <- matrix(as.integer(data@.Data),nrow=nrow(data@.Data))
+geno[geno==0] <- NA
+geno <- geno-1
+# keep only SNPs without missing data
+geno <- geno[,complete.cases(t(geno))]
+
+# Loading clustering definitions
+clusters <- read.csv("clusters.csv", header=1)
+```
+
+```R
 WC84<-function(x,pop){
-     # function to estimate Fst using Weir and Cockerham estimator.
-     # x is NxM genotype matrix, pop is N length vector with population assignment for each sample
-     # returns list with fst between population per M snps (theta) and other variables
-     ###number ind in each population
-     n<-table(pop)
-     ###number of populations
-     npop<-nrow(n)
-     ###average sample size of each population
-     n_avg<-mean(n)
-     ###total number of samples
-     N<-length(pop)
-     ###frequency in samples
-     p<-apply(x,2,function(x,pop){tapply(x,pop,mean)/2},pop=pop)
-     ###average frequency in all samples (apply(x,2,mean)/2)
-     p_avg<-as.vector(n%*%p/N )
-     ###the sample variance of allele 1 over populations
-     s2<-1/(npop-1)*(apply(p,1,function(x){((x-p_avg)^2)})%*%n)/n_avg
-     ###average heterozygotes
-     # h<-apply(x==1,2,function(x,pop)tapply(x,pop,mean),pop=pop)
-     #average heterozygote frequency for allele 1
-     # h_avg<-as.vector(n%*%h/N)
-     ###faster version than above:
-     h_avg<-apply(x==1,2,sum)/N
-     ###nc (see page 1360 in wier and cockerhamm, 1984)
-     n_c<-1/(npop-1)*(N-sum(n^2)/N)
-     ###variance between populations
-     a <-n_avg/n_c*(s2-(p_avg*(1-p_avg)-(npop-1)*s2/npop-h_avg/4)/(n_avg-1))
-     ###variance between individuals within populations
-     b <- n_avg/(n_avg-1)*(p_avg*(1-p_avg)-(npop-1)*s2/npop-(2*n_avg-1)*h_avg/(4*n_avg))
-     ###variance within individuals
-     c <- h_avg/2
-     ###inbreeding (F_it)
-     F <- 1-c/(a+b+c)
-     ###(F_st)
-     theta <- a/(a+b+c)
-     ###(F_is)
-     f <- 1-c(b+c)
-     ###weighted average of theta
-     theta_w<-sum(a)/sum(a+b+c)
-     list(F=F,theta=theta,f=f,theta_w=theta_w,a=a,b=b,c=c,total=c+b+a)
+  # function to estimate Fst using Weir and Cockerham estimator.
+  # x is NxM genotype matrix, pop is N length vector with population assignment for each sample
+  # returns list with fst between population per M snps (theta) and other variables
+  start.time = Sys.time()
+  ###number ind in each population
+  n<-table(pop)
+  ###number of populations
+  npop<-nrow(n)
+  ###average sample size of each population
+  n_avg<-mean(n)
+  ###total number of samples
+  N<-length(pop)
+  ###frequency in samples
+  p<-apply(x,2,function(x,pop){tapply(x,pop,mean)/2},pop=pop)
+  ###average frequency in all samples (apply(x,2,mean)/2)
+  p_avg<-as.vector(n%*%p/N )
+  ###the sample variance of allele 1 over populations
+  s2<-1/(npop-1)*(apply(p,1,function(x){((x-p_avg)^2)})%*%n)/n_avg
+  ###average heterozygotes
+  # h<-apply(x==1,2,function(x,pop)tapply(x,pop,mean),pop=pop)
+  #average heterozygote frequency for allele 1
+  # h_avg<-as.vector(n%*%h/N)
+  ###faster version than above:
+  h_avg<-apply(x==1,2,sum)/N
+  ###nc (see page 1360 in wier and cockerhamm, 1984)
+  n_c<-1/(npop-1)*(N-sum(n^2)/N)
+  ###variance between populations
+  a <-n_avg/n_c*(s2-(p_avg*(1-p_avg)-(npop-1)*s2/npop-h_avg/4)/(n_avg-1))
+  ###variance between individuals within populations
+  b <- n_avg/(n_avg-1)*(p_avg*(1-p_avg)-(npop-1)*s2/npop-(2*n_avg-1)*h_avg/(4*n_avg))
+  ###variance within individuals
+  c <- h_avg/2
+  ###inbreeding (F_it)
+  F <- 1-c/(a+b+c)
+  ###(F_st)
+  theta <- a/(a+b+c)
+  ###(F_is)
+  f <- 1-c(b+c)
+  ###weighted average of theta
+  theta_w<-sum(a)/sum(a+b+c)
+  print(theta_w)
+  print(unique(pop))
+  return(theta_w)
 }
 ```
 
 ```R
-# Loading clustering definitions
-read.csv("clusters.csv", header=1)
+# Initialising dataframe for storage
+df <- data.frame(C=character(), pair=character(), Fst=numeric())
 
-# LOADING
-library(dplyr)
-```
-
-```R
 # Comparing clusters by Fst
-cluster_pairs <- t(combn(unique(clusters), 2))
-fsts <- apply(cluster_pairs, 1, function(pair) WC84(geno[clusters %in% pair,], clusters[clusters %in% pair]))
-names(fsts) <- apply(cluster_pairs, 1, paste, collapse="_")
-lapply(fsts, function(x) x$theta_w)
+for (C in names(clusters)[-1]) {
+  print(C)
+  cluster_pairs <- t(combn(unique(clusters[C]), 2))
+  Fsts <- apply(cluster_pairs, 1, function(pair) WC84(geno[clusters[C] %in% pair,], clusters[C][clusters[C] %in% pair]))
+  df <- rbind(df,
+              data.frame(
+                C=C,
+                pair=apply(cluster_pairs, 1, paste, collapse=" "),
+                Fst=Fsts))
+}
+
+write.csv(df, "fsts.csv")
 ```

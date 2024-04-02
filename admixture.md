@@ -75,8 +75,12 @@ grep ^Loglikelihood: *K${K}*log | sort -k2
 Test plot of K=7, run 1
 ```R
 # Margins and colors
+library(RColorBrewer)
 par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
-palette(c("#E69F00", "#56B4E9", "#D55E00", "#999999", "#66CC00", "#CC0066", "#9999FF"))
+
+# Use Set3 color palette from RColorBrewer with 7 colors
+colors <- brewer.pal(7, "Dark2")
+palette(colors)
 
 # Load sample names
 popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
@@ -94,8 +98,9 @@ order_indices <- order(match(region_names, unique(region_names)))
 # Reorder the rows of snp_k7_run1
 snp_k7_run1_sorted <- snp_k7_run1[order_indices, ]
 
-# Barplot with sorted data
-barplot(t(snp_k7_run1_sorted), col=c(7,6,5,4,3,2,1), 
+# Barplot with sorted data using the Set3 colors
+barplot(t(snp_k7_run1_sorted), col=colors, 
         names.arg=region_names[order_indices], cex.names=0.8,
         border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
+
 ```

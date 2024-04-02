@@ -50,27 +50,29 @@ pop = as.vector(popinfo[,1])
 r <- as.matrix(read.table("K3.output.corres.txt"))
 plotCorRes(cor_mat = r, pop = pop, title = "Correlation of residuals (K=3)", max_z=0.15, min_z=-0.15)
 ```
+Afterwards, we ran admixture 10 times for eack K = 3 to 7.
 
 ```bash
-# For best K=7, run 10 admixture
-# Assumed number of ancestral populations 
-K=7
+# For K in 3 to 7, run 10 admixture
+
+# Assumed number of ancestral populations
+K=3
 
 for i in {1..10}
 do
    # Run admixture with seed i
-   admixture -s ${i} AF.imputed.thin.bed ${K} > admix_K7/AF.imputed.thin.K${K}_run${i}.log
+   admixture -s ${i} AF.imputed.thin.bed ${K} > admix_K${K}/AF.imputed.thin.K${K}_run${i}.log
    
    # Rename the output files
-   cp AF.imputed.thin.${K}.Q admix_K7/AF.imputed.K${K}_run${i}.Q
-   cp AF.imputed.thin.${K}.P admix_K7/AF.imputed.K${K}_run${i}.P
+   cp AF.imputed.thin.${K}.Q admix_K${K}/AF.imputed.K${K}_run${i}.Q
+   cp AF.imputed.thin.${K}.P admix_K${K}/AF.imputed.K${K}_run${i}.P
+   echo "Run ${i} done"
 done
 
 # Show the likelihood of all the 10 runs (in a sorted manner):
-cd admix_K7
+cd admix_K3
 grep ^Loglikelihood: *K${K}*log | sort -k2
 ```
-
 
 Following code was used to make admixture plot of K equal to 3, 4, 5, 6, and 7 taking the best run out 10.
 ```R

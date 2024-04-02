@@ -72,35 +72,31 @@ grep ^Loglikelihood: *K${K}*log | sort -k2
 ```
 
 
-Test plot of K=7, run 1
+Following code was used to make admixture plot of K equal to 3, 4, 5, 6, and 7 taking the best run out 10.
 ```R
 # Margins and colors
-library(RColorBrewer)
 par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
-
-# Use Set3 color palette from RColorBrewer with 7 colors
-colors <- brewer.pal(7, "Dark2")
-palette(colors)
+palette(c("#E69F00", "#56B4E9", "#D55E00", "#999999", "#66CC00", "#CC0066", "#9999FF"))
 
 # Load sample names
 popinfo <- read.table("sample_popinfo.tsv", header = TRUE)
 region_names <- popinfo$Region
 
 # Read sample ancestral proportions
-snp_k7_run1 <- as.matrix(read.table("AF.imputed.K7_run1.Q"))
+snp_k <- as.matrix(read.table("AF.imputed.K7_run4.Q"))
 
-# Ensure row names of snp_k7_run1 correspond exactly to region_names
-rownames(snp_k7_run1) <- popinfo$Sample
+# Ensure row names of snp_k correspond exactly to region_names
+rownames(snp_k) <- popinfo$Sample
 
 # Get the order of region_names
 order_indices <- order(match(region_names, unique(region_names)))
 
-# Reorder the rows of snp_k7_run1
-snp_k7_run1_sorted <- snp_k7_run1[order_indices, ]
+# Reorder the rows of snp_k
+snp_k_sorted <- snp_k[order_indices, ]
 
-# Barplot with sorted data using the Set3 colors
-barplot(t(snp_k7_run1_sorted), col=colors, 
+# Barplot with sorted data using the given colors
+barplot(t(snp_k_sorted), col=c(7,6,5,4,3,2,1), 
         names.arg=region_names[order_indices], cex.names=0.8,
-        border=NA, main="K=7 - Run 1", las=2, ylab="Ancestry proportion")
+        border=NA, main="K=7 - Run 4", las=2, ylab="Ancestry proportion")
 
 ```

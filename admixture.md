@@ -41,18 +41,28 @@ Taking the best run for each K, we did evaluation of the model with `evalAdmix`.
 ```bash
 # Running evaluation of admixture output to find optimal K
 # Assumed K number of ancestral populations
-for K in {3..7}
-do
-   # Run evalAdmix on admixture output files
-   ./evalAdmix -plink AF.imputed.thin -fname admix_K${K}/AF.imputed.thin.${K}.P -qname admix_K${K}/AF.imputed.thin.${K}.Q -o       K${K}.output.corres.txt
 
-done
+# K = 3, best run = 1
+./evalAdmix -plink AF.imputed.thin -fname AF.imputed.K3_run1.P -qname AF.imputed.K3_run1.Q -o K3.output.corres.txt
+
+# K = 4, best run = 10
+./evalAdmix -plink AF.imputed.thin -fname AF.imputed.K4_run10.P -qname AF.imputed.K4_run10.Q -o K4.output.corres.txt
+
+# K = 5, best run = 7
+./evalAdmix -plink AF.imputed.thin -fname AF.imputed.K5_run7.P -qname AF.imputed.K5_run7.Q -o K5.output.corres.txt
+
+# K = 6, best run = 8
+./evalAdmix -plink AF.imputed.thin -fname AF.imputed.K6_run8.P -qname AF.imputed.K6_run8.Q -o K6.output.corres.txt
+
+# K = 7, best run = 4
+./evalAdmix -plink AF.imputed.thin -fname AF.imputed.K7_run4.P -qname AF.imputed.K7_run4.Q -o K7.output.corres.txt
+
 
 # Copying visFuns.R to admixture folder
 cp -r visFuns.R /science/groupdirs/jmz230/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox/admixture/
 ```
 
-Evaluating the fit of admixture analyses: value of K (done for each `K${K}.output.corres.txt`)
+Evaluating the fit of admixture analysis with correlation matrix (done for each `K${K}.output.corres.txt`)
 
 ```R
 # Read in plotting functions
@@ -66,11 +76,9 @@ pop = as.vector(popinfo[,1])
 r <- as.matrix(read.table("K3.output.corres.txt"))
 plotCorRes(cor_mat = r, pop = pop, title = "Correlation of residuals (K=3)", max_z=0.15, min_z=-0.15)
 ```
-Afterwards, we ran admixture 10 times for eack K = 3 to 7.
-
-
 
 Following code was used to make admixture plot of K equal to 3, 4, 5, 6, and 7 taking the best run out 10.
+
 ```R
 # Margins and colors
 par(mar=c(7,3,2,1), mgp=c(2,0.6,0))
@@ -96,5 +104,4 @@ snp_k_sorted <- snp_k[order_indices, ]
 barplot(t(snp_k_sorted), col=c(7,6,5,4,3,2,1), 
         names.arg=region_names[order_indices], cex.names=0.8,
         border=NA, main="K=7 - Run 4", las=2, ylab="Ancestry proportion")
-
 ```

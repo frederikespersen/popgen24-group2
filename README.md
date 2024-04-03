@@ -257,3 +257,30 @@ inb_p<-ggplot(F, aes(x=IID, y=F, fill=Region)) +
   scale_x_discrete(limits=F$IID)+xlab('Samples')+ylab('F (Inbreeding coefficient)')+
   ggtitle('Inbreeding coefficient', )+scale_fill_brewer(palette="Dark2")
 ```
+### Homozygosity
+
+In R:
+```R
+# install.packages("ggsignif")
+library(ggsignif)
+# install.packages("reshape2")
+library(reshape2)
+
+# Calculate homozygosity per individual
+F$homo<-F$O.HOM./F$N.NM.
+# Subdivide them according to human presence
+F$Human<-F$Country=='Greenland'
+F[F$Region=='Zackenberg',]$Human=FALSE
+# Sample 14 individual from each group
+human<-sample(F[F$Human,]$homo, size = 14, replace = T)
+no_human<-sample(F[!F$Human,]$homo, size = 14, replace = T)
+human_pres<-data.frame(no_human, human)
+colnames(human_pres)<-c('Not present', 'Present')
+
+stat_p<-ggplot(data = melt(human_pres),  aes(x=variable, y=value, fill=variable))+geom_boxplot()+
+  theme_classic()+
+  geom_signif(comparisons = list(c('Not present', 'Present')),test = 't.test', map_signif_level = function(p) sprintf("t-test, p = %.2g", p), textsize = 4)+
+  ylab('Homozygosity')+
+  xlab('Human')+scale_fill_brewer(palette="Dark2")+
+  guides(fill=guide_legend(title="Human"))
+```

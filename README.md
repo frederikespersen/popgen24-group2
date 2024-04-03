@@ -153,120 +153,75 @@ geo$Region <- gsub("_", " ", geo$Region)
 names(pcs) <- geo$Sample
 
 # Sorting data according to regions
-clustering_order <- c(35, 22, 13, 39, 3, 42, 43, 41, 45, 44, 1, 5, 46, 47, 23, 14, 20, 36, 29, 17, 26, 11, 4, 40, 8, 32, 30, 27, 6, 33, 21, 37, 9, 24, 15, 18, 16, 38, 19, 34, 7, 31, 25, 28, 12, 2, 10)
-geo <- geo[clustering_order,]
-pcs <- pcs[clustering_order,]
+clustering_order <- c(35, 22, 13, 39, 3, 42, 43, 41, 45, 44, 1, 5, 46, 47, 23, 14, 20, 36, 29, 17, 26, 11, 4, 40, 8, 32, 6, 33, 30, 27, 21, 37, 9, 24, 15, 18, 16, 38, 19, 34, 7, 31, 25, 28, 12, 2, 10)
 ```
 
 ```R
 # Scanning over m and k
 num_samples <- length(pcs)
 clustering_frequency <- matrix(0, nrow = num_samples, ncol = num_samples)
-for (m in 1:6) {
-  for (k in 2:8) {
-    clusters <- kmeans(pcs[1:m], k)$cluster
-    clustering_frequency <- clustering_frequency + outer(
-      clusters,
-      clusters,
-      "==")
+for (replicate in 1:500) {
+  for (m in 1:6) {
+    for (k in 2:8) {
+      clustering <- kmeans(pcs[clustering_order,][1:m], k)$cluster
+      clustering_frequency <- clustering_frequency + outer(clustering, clustering, "==")
+    }
   }
 }
 clustering_frequency <- clustering_frequency / max(clustering_frequency)
 
 # Plotting clustering frequency
-region_palette <- c("#FF7D7B", "#FF0000", "#C00E38", "#7E0605", "#13501B", "#17A238", "#B82EAA")
-region_palette <- c("#B82EAA", )
-region_colours <- region_palette[as.numeric(factor(geo$Region, levels=unique(geo$Region)))]
+region_palette <- c("#7E0605", "#B82EAA", "#17A238", "#13501B", "#C00E38", "#FF0000", "#FF7D7B")
+region_colours <- region_palette[as.numeric(factor(geo$Region[clustering_order], levels=unique(geo$Region[clustering_order])))]
 par(cex = 1, family = "serif")
-labels <- paste(geo$Region[order], c(1:5, 1:5, 1:3, 1, 1:12, 1:10, 1:11))
-heatmap(clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours)
+heatmap(clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours, labRow=geo$Sample[clustering_order], labCol=geo$Sample[clustering_order])
 dev.copy(png, "cluster_frequency.png")
 ```
 
 ```R
-clustering_order <- c(35, 22, 13, 39, 3, 42, 43, 41, 45, 44, 1, 5, 46, 47, 23, 14, 20, 36, 29, 17, 26, 11, 4, 40, 8, 32, 30, 27, 6, 33, 21, 37, 9, 24, 15, 18, 16, 38, 19, 34, 7, 31, 25, 28, 12, 2, 10)
+# Assigning clusters manually
+clusters <- data.frame(
+  row.names = row.names(geo[clustering_order,]),
+  sample = geo$Sample[clustering_order],
+  K = c(rep(1,4), rep(2,13), rep(3,9), rep(4,10), rep(5,5), rep(6,6))
+)
+clusters <- clusters[order(as.numeric(rownames(clusters))),]
+
+# Merging clusters
+clusters$K12 <- clusters$K
+clusters$K12[clusters$K12 == 1 | clusters$K12 == 2] <- 12
+clusters$K24 <- clusters$K
+clusters$K24[clusters$K24 == 2 | clusters$K24 == 4] <- 24
+clusters$K56 <- clusters$K
+clusters$K56[clusters$K56 == 5 | clusters$K56 == 6] <- 56
+write.csv(clusters, "clusters.csv")
+
+# Clustering frequency cutoff mask
+par(mfrow = c(3,3), mar=c(rep(1.4,4)))
+box_dims <- tapply(1:47, clusters$K[clustering_order], function(x) c(ytop=1-(min(x)-1)/47, ybot=1-max(x)/47, xrig=max(x)/47, xlef=(min(x)-1)/47))
+marg_fix <- function(x) -(1-(x/0.5))/(47*6)
+for (t in seq(0.1, 0.9, 0.1)) {
+  image(t<clustering_frequency[,nrow(clustering_frequency):1], axes=FALSE)
+  title(paste("Clustering frequency > ",t))
+  for (box in box_dims) {
+    rect(xleft = box["xlef"] + marg_fix(box["xlef"]),
+    xright = box["xrig"] + marg_fix(box["xrig"]),
+    ybottom = box["ybot"] + marg_fix(box["ybot"]),
+    ytop = box["ytop"] + marg_fix(box["ytop"]),
+    col = NA, border = "black", lty=3)
+  }
+}
 ```
 
 ### Fst
-```R
-# Loading PLINK genotype data
-library(snpMatrix)
-data <- read.plink("AF.imputed.thin")
-geno <- matrix(as.integer(data@.Data),nrow=nrow(data@.Data))
-geno[geno==0] <- NA
-geno <- geno-1
-# keep only SNPs without missing data
-geno <- geno[,complete.cases(t(geno))]
 
-# Loading clustering definitions
-clusters <- read.csv("clusters.csv", header=1)
+```Unix
+# Calculating Fst
+r cmd batch fst_calc.r fst_calc.out &
 ```
 
 ```R
-WC84<-function(x,pop){
-  # function to estimate Fst using Weir and Cockerham estimator.
-  # x is NxM genotype matrix, pop is N length vector with population assignment for each sample
-  # returns list with fst between population per M snps (theta) and other variables
-  start.time = Sys.time()
-  ###number ind in each population
-  n<-table(pop)
-  ###number of populations
-  npop<-nrow(n)
-  ###average sample size of each population
-  n_avg<-mean(n)
-  ###total number of samples
-  N<-length(pop)
-  ###frequency in samples
-  p<-apply(x,2,function(x,pop){tapply(x,pop,mean)/2},pop=pop)
-  ###average frequency in all samples (apply(x,2,mean)/2)
-  p_avg<-as.vector(n%*%p/N )
-  ###the sample variance of allele 1 over populations
-  s2<-1/(npop-1)*(apply(p,1,function(x){((x-p_avg)^2)})%*%n)/n_avg
-  ###average heterozygotes
-  # h<-apply(x==1,2,function(x,pop)tapply(x,pop,mean),pop=pop)
-  #average heterozygote frequency for allele 1
-  # h_avg<-as.vector(n%*%h/N)
-  ###faster version than above:
-  h_avg<-apply(x==1,2,sum)/N
-  ###nc (see page 1360 in wier and cockerhamm, 1984)
-  n_c<-1/(npop-1)*(N-sum(n^2)/N)
-  ###variance between populations
-  a <-n_avg/n_c*(s2-(p_avg*(1-p_avg)-(npop-1)*s2/npop-h_avg/4)/(n_avg-1))
-  ###variance between individuals within populations
-  b <- n_avg/(n_avg-1)*(p_avg*(1-p_avg)-(npop-1)*s2/npop-(2*n_avg-1)*h_avg/(4*n_avg))
-  ###variance within individuals
-  c <- h_avg/2
-  ###inbreeding (F_it)
-  F <- 1-c/(a+b+c)
-  ###(F_st)
-  theta <- a/(a+b+c)
-  ###(F_is)
-  f <- 1-c(b+c)
-  ###weighted average of theta
-  theta_w<-sum(a)/sum(a+b+c)
-  print(theta_w)
-  print(unique(pop))
-  return(theta_w)
-}
-```
-
-```R
-# Initialising dataframe for storage
-df <- data.frame(C=character(), pair=character(), Fst=numeric())
-
-# Comparing clusters by Fst
-for (C in names(clusters)[-1]) {
-  print(C)
-  cluster_pairs <- t(combn(unique(clusters[C]), 2))
-  Fsts <- apply(cluster_pairs, 1, function(pair) WC84(geno[clusters[C] %in% pair,], clusters[C][clusters[C] %in% pair]))
-  df <- rbind(df,
-              data.frame(
-                C=C,
-                pair=apply(cluster_pairs, 1, paste, collapse=" "),
-                Fst=Fsts))
-}
-
-write.csv(df, "fsts.csv")
+library(tidyverse)
 ```
 
 ## Effect of human colonization

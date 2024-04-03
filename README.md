@@ -39,12 +39,6 @@ geno <- geno-1
 
 # Loading sample data
 geo <- read.table("sample_popinfo.tsv",header=1)
-
-# Sorting data according to regions
-region_order <- c("Zackenberg", "Scoresbysund", "Kangerlussuaq", "Qanisartuut", "Taymyr", "Bylot_island", "Karrak_lake")
-geo$Region <- factor(geo$Region, levels=region_order)
-geo <- geo[order(geo$Region), ]
-geno <- geno[as.integer(rownames(geo)),]
 ```
 
 ```R
@@ -61,7 +55,7 @@ dim(geo)
 In UNIX:
 ```unix
 mkdir pca
-plink --bfile AF.imputed.thin --pca 47 --maf 0.05 --geno 0 --out pca/pca_results
+plink --bfile AF.imputed.thin --pca 47 --geno 0 --out pca/pca_results
 ```
 
 In R:
@@ -106,9 +100,6 @@ ggsave("pca_importance.png", p, width = 5, height = 3, dpi = 300)
 
 ```R
 # Plot PCs
-library(ggplot2)
-library(ggpubr)
-
 PC1_explained <- round(pca_importance[1,1]*100, 1)
 PC2_explained <- round(pca_importance[2,1]*100, 1)
 PC3_explained <- round(pca_importance[3,1]*100, 1)
@@ -147,7 +138,7 @@ combined_plot <-
   ggarrange(p12, p13, p23, ncol = 3,
             common.legend = TRUE, legend = "right")
 
-ggsave("pca_plink.png", combined_plot, width = 10, height = 3, dpi = 300)
+ggsave("pca.png", combined_plot, width = 10, height = 3, dpi = 300)
 ```
 
 ### Clustering with PCA from PLINK
@@ -159,15 +150,12 @@ names(pcs) <- paste("PC",1:47, sep="")
 # Loading sample data and formatting text
 geo <- read.table("sample_popinfo.tsv",header=1)
 geo$Region <- gsub("_", " ", geo$Region)
-row.names(pcs) <- paste(geo$Region, "(",1:47,")")
+names(pcs) <- geo$Sample
 
 # Sorting data according to regions
-region_order <- c("Qanisartuut", "Kangerlussuaq", "Scoresbysund", "Zackenberg", "Bylot island", "Karrak lake", "Taymyr")
-geo$Region <- factor(geo$Region, levels=region_order)
-geo <- geo[order(geo$Region), ]
-pcs <- pcs[as.integer(rownames(geo)),]
-row.names(pcs) <- paste(geo$Region, "(",1:47,")")
-row.names(pcs) <- paste(1:47, geo$Region)
+clustering_order <- c(35, 22, 13, 39, 3, 42, 43, 41, 45, 44, 1, 5, 46, 47, 23, 14, 20, 36, 29, 17, 26, 11, 4, 40, 8, 32, 30, 27, 6, 33, 21, 37, 9, 24, 15, 18, 16, 38, 19, 34, 7, 31, 25, 28, 12, 2, 10)
+geo <- geo[clustering_order,]
+pcs <- pcs[clustering_order,]
 ```
 
 ```R
@@ -187,13 +175,11 @@ clustering_frequency <- clustering_frequency / max(clustering_frequency)
 
 # Plotting clustering frequency
 region_palette <- c("#FF7D7B", "#FF0000", "#C00E38", "#7E0605", "#13501B", "#17A238", "#B82EAA")
-order <- c(37, 36, 35, 38, 34, 44, 45, 43, 47, 46, 40, 41, 42, 39, 28, 25, 27, 32, 30, 26, 29, 24, 22, 33, 23, 31, 19, 18, 12, 20, 16, 21, 13, 17, 14, 15, 5, 11, 6, 10, 2, 9, 7, 8, 4, 1, 3)
-ordered_clustering_frequency <- clustering_frequency[order,order]
-region_colours <- region_palette[as.numeric(as.factor(geo$Region[order]))]
+region_palette <- c("#B82EAA", )
+region_colours <- region_palette[as.numeric(factor(geo$Region, levels=unique(geo$Region)))]
 par(cex = 1, family = "serif")
 labels <- paste(geo$Region[order], c(1:5, 1:5, 1:3, 1, 1:12, 1:10, 1:11))
-heatmap(ordered_clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours, labRow=labels, labCol=labels)
-# heatmap(clustering_frequency, symm=TRUE, RowSideColors=region_palette[as.numeric(as.factor(geo$Region))], ColSideColors=region_palette[as.numeric(as.factor(geo$Region))], keep.dendro=FALSE)
+heatmap(clustering_frequency, Rowv=NA, Colv=NA, revC=TRUE, scale="none", RowSideColors=region_colours, ColSideColors=region_colours)
 dev.copy(png, "cluster_frequency.png")
 ```
 

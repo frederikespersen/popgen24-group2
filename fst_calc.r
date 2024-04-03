@@ -8,7 +8,7 @@ geno <- geno-1
 geno <- geno[,complete.cases(t(geno))]
 
 # Loading clustering definitions
-clusters <- read.csv("clusters.csv", header=1)
+clusters <- read.csv("clusters.csv", header=1, row.names=1)
 
 WC84<-function(x,pop){
   # function to estimate Fst using Weir and Cockerham estimator.

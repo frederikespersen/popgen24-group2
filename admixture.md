@@ -5,39 +5,55 @@ We choose minimum K of 3, and the choice of maximum K was done looking at the nu
 # Finding number of maximum cluster
 tail -n +2 sample_popinfo.tsv | cut -f1 | sort | uniq | wc -l
 ```
-Then we wanted to evaluate which K is best for admixture. Therefore, we ran admixture 1 time for each K
+
+After, we ran admixture 10 times for each K in 3-7.
 
 ```bash
-# For admixture evaluation - Running admixture (K in 3-7)
-
-# Assumming K number of ancestral populations
+# Assumed number of ancestral populations
 for K in {3..7}
 do
-   # Run admixture with seed 1
-   admixture -s 1 AF.imputed.thin.bed ${K} > AF.imputed_K${K}_run1.log
-
+   mkdir admix_K${K}
+   
+   for i in {1..10}
+   do
+      # Run admixture with seed i
+      admixture -s ${i} AF.imputed.thin.bed ${K} > admix_K${K}/AF.imputed.thin.K${K}_run${i}.log
+   
+      # Rename the output files
+      cp AF.imputed.thin.${K}.Q admix_K${K}/AF.imputed.K${K}_run${i}.Q
+      cp AF.imputed.thin.${K}.P admix_K${K}/AF.imputed.K${K}_run${i}.P
+      echo "Run ${i} done"
+   done
+   echo "Runs for ${K} done"
 done
-
-# Show the likelihood of all the runs (in a sorted manner):
-grep ^Loglikelihood: *K${K}*log | sort -k2
 ```
-Afterwards, `evalAdmix` was used on each K file.
+
+Afterwards, we found the best run for each K with (Shown for K=3):
 
 ```bash
-# Copying visFuns.R to admixture folder
-cp -r visFuns.R /science/groupdirs/jmz230/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox/admixture/
+# Show the likelihood of all the 10 runs (in a sorted manner):
+cd admix_K3
+grep ^Loglikelihood: *K${K}*log | sort -k2
+```
 
+Taking the best run for each K, we did evaluation of the model with `evalAdmix`.
+
+```bash
 # Running evaluation of admixture output to find optimal K
 # Assumed K number of ancestral populations
 for K in {3..7}
 do
    # Run evalAdmix on admixture output files
-   ./evalAdmix -plink AF.imputed.thin -fname AF.imputed.thin.${K}.P -qname AF.imputed.thin.${K}.Q -o K${K}.output.corres.txt
+   ./evalAdmix -plink AF.imputed.thin -fname admix_K${K}/AF.imputed.thin.${K}.P -qname admix_K${K}/AF.imputed.thin.${K}.Q -o       K${K}.output.corres.txt
 
 done
+
+# Copying visFuns.R to admixture folder
+cp -r visFuns.R /science/groupdirs/jmz230/SCIENCE-BIO-popgen_course-project/Group2_ArcticFox/admixture/
 ```
 
 Evaluating the fit of admixture analyses: value of K (done for each `K${K}.output.corres.txt`)
+
 ```R
 # Read in plotting functions
 source("visFuns.R")
@@ -52,27 +68,7 @@ plotCorRes(cor_mat = r, pop = pop, title = "Correlation of residuals (K=3)", max
 ```
 Afterwards, we ran admixture 10 times for eack K = 3 to 7.
 
-```bash
-# For K in 3 to 7, run 10 admixture
 
-# Assumed number of ancestral populations
-K=3
-
-for i in {1..10}
-do
-   # Run admixture with seed i
-   admixture -s ${i} AF.imputed.thin.bed ${K} > admix_K${K}/AF.imputed.thin.K${K}_run${i}.log
-   
-   # Rename the output files
-   cp AF.imputed.thin.${K}.Q admix_K${K}/AF.imputed.K${K}_run${i}.Q
-   cp AF.imputed.thin.${K}.P admix_K${K}/AF.imputed.K${K}_run${i}.P
-   echo "Run ${i} done"
-done
-
-# Show the likelihood of all the 10 runs (in a sorted manner):
-cd admix_K3
-grep ^Loglikelihood: *K${K}*log | sort -k2
-```
 
 Following code was used to make admixture plot of K equal to 3, 4, 5, 6, and 7 taking the best run out 10.
 ```R
